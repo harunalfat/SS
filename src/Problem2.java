@@ -1,12 +1,14 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 
 public class Problem2 {
 
+    private static final String RESULT_FILE_LOCATION = "sorted_age.txt";
+
     /**
      * For arguments, it need to have the age list file location.
-     * Example to run the program : java Problem2 ~/age_file.txt
+     * Example to run the program : java Problem2 ~/age.txt
+     *
+     * The result will be a file named sorted_age.txt that consists all the sorted age
      *
      * @param args Arguments from command-line
      * @throws IOException Will be thrown if file of age list is not found
@@ -32,11 +34,13 @@ public class Problem2 {
             ageRange[age]++;
         }
 
+        final PrintWriter pw = new PrintWriter(new FileWriter(RESULT_FILE_LOCATION));
         for (short i = 0; i < 201; i++) {
             for (short j = 0; j < ageRange[i]; j++) {
-                System.out.println(i);
+                pw.println(i);
             }
         }
+        pw.close();
     }
 
 }
