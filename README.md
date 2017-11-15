@@ -1,0 +1,1 @@
+Please take a look into the JavaDoc for better documentation :)
