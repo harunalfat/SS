@@ -40,6 +40,7 @@ public class Problem2 {
                 pw.println(i);
             }
         }
+        br.close();
         pw.close();
     }
 

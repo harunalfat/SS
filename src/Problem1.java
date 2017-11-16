@@ -79,6 +79,7 @@ public class Problem1 {
             final String[] columns = line.split("\t");
             PROD_SCORE_MAP.put(columns[PID], Short.parseShort(columns[SCORE]));
         }
+        br.close();
     }
 
     /**
@@ -89,7 +90,7 @@ public class Problem1 {
      */
     private static void writeUserProductOrder(final String userPreferenceLocation) throws IOException {
         final BufferedReader br = new BufferedReader(new FileReader(userPreferenceLocation));
-        final Map<String, Map<String, Float>> usersPrefMap = new HashMap<>();
+        final Map<String, List<ProductAndScore>> usersPrefMap = new HashMap<>();
         String line;
 
         final int UID = 0;
@@ -101,7 +102,7 @@ public class Problem1 {
         while ((line = br.readLine()) != null) {
             final String[] columns = line.split("\t");
 
-            final Map<String, Float> userProductsScore = usersPrefMap.getOrDefault(columns[UID], new HashMap<>());
+            final List<ProductAndScore> userProductsScore = usersPrefMap.getOrDefault(columns[UID], new ArrayList<>());
             final long rowUnixTimestamp = Long.parseLong(columns[TIMESTAMP]);
 
             final int dayDifference = (int) ((currentUnixTimestamp - rowUnixTimestamp) / 24 / 3600);
@@ -109,14 +110,16 @@ public class Problem1 {
 
             final short productScore = PROD_SCORE_MAP.get(columns[PID]);
             final float currentScore = productScore * (Float.parseFloat(columns[SCORE]) * multiplyFactor) + productScore;
-            userProductsScore.put(columns[PID], currentScore);
+            userProductsScore.add(new ProductAndScore(columns[PID], currentScore));
             usersPrefMap.put(columns[UID], userProductsScore);
         }
+        br.close();
 
-        final Map<String, List<ProductAndScore>> userProductOrder = getSortedProductByScorePerUser(usersPrefMap);
+        sortProductByScorePerUser(usersPrefMap);
         final FileOutputStream fos = new FileOutputStream(SERIALIZED_MAP_LOCATION);
         final ObjectOutputStream oos = new ObjectOutputStream(fos);
-        oos.writeObject(userProductOrder);
+
+        oos.writeObject(usersPrefMap);
         oos.flush();
         oos.close();
     }
@@ -127,21 +130,12 @@ public class Problem1 {
      * @param usersPrefMap Previously build for user product preference score updated
      * @return Map of user and sorted list of product by score
      */
-    private static Map<String, List<ProductAndScore>> getSortedProductByScorePerUser(final Map<String, Map<String, Float>> usersPrefMap) {
-        final Map<String, List<ProductAndScore>> userProductOrder = new HashMap<>();
-        for (Map.Entry<String, Map<String, Float>> userEntry : usersPrefMap.entrySet()) {
-
-            final List<ProductAndScore> productAndScoreList = new ArrayList<>();
-
-            for (Map.Entry<String, Float> productEntry : userEntry.getValue().entrySet()) {
-                final ProductAndScore ps = new ProductAndScore(productEntry.getKey(), productEntry.getValue());
-                productAndScoreList.add(ps);
-            }
-
-            productAndScoreList.sort((o1, o2) -> Float.compare(o2.score, o1.score));
-            userProductOrder.put(userEntry.getKey(), productAndScoreList);
+    private static void sortProductByScorePerUser(final Map<String, List<ProductAndScore>> usersPrefMap) {
+        for (Map.Entry<String, List<ProductAndScore>> userEntry : usersPrefMap.entrySet()) {
+            userEntry
+                    .getValue()
+                    .sort((o1, o2) -> Float.compare(o2.score, o1.score));
         }
-        return userProductOrder;
     }
 
     /**
@@ -153,6 +147,8 @@ public class Problem1 {
     private static void recommend(final String uid) throws IOException, ClassNotFoundException {
         final ObjectInputStream ois = new ObjectInputStream(new FileInputStream(SERIALIZED_MAP_LOCATION));
         final Map<String, List<ProductAndScore>> userProductOrder = (Map<String, List<ProductAndScore>>) ois.readObject();
+        ois.close();
+
         final List<ProductAndScore> productAndScores = userProductOrder.get(uid);
 
         int counter = 0;
@@ -162,6 +158,7 @@ public class Problem1 {
             System.out.println(ps.getPid());
             counter++;
         }
+
     }
 
     private static class ProductAndScore implements Serializable{
